@@ -1,36 +1,72 @@
-# ScrollMouseWin
+# ScrollWin
 
-Menu bar app for macOS Apple Silicon that flips only mouse-wheel scrolling to behave like Windows.
+ScrollWin is a lightweight macOS menu bar app that reverses only your mouse wheel scroll direction, so an external mouse behaves more like Windows while your trackpad keeps its normal macOS scrolling.
+
+It is designed for people who want:
+
+- Natural scrolling on trackpad
+- Opposite scrolling on a physical mouse
+- A small menu bar utility with no Dock icon
+- Quick access to Accessibility settings and launch-at-login
 
 ## Features
 
-- Reverse mouse-wheel scrolling up/down
-- Leave trackpad scrolling alone
-- Launch automatically at login
+- Reverse mouse-wheel scrolling without changing trackpad scrolling
 - Runs as a lightweight menu bar app
+- Launch at login support
+- Accessibility shortcut built into the menu
+- Menu bar icon style picker
 
 ## Requirements
 
 - macOS 13 or newer
-- Accessibility permission enabled for the app
+- Apple Silicon Mac
+- Accessibility permission for `scrollwin-daemon`
 
-## Build
+## Installation
+
+### Option 1: Build from source
 
 ```bash
 swift build
 ./scripts/build-app.sh
 ```
 
-The app bundle will be created at `dist/ScrollMouseWin.app`.
+This creates the app at `dist/ScrollMouseWin.app`.
 
-## Run
+### Option 2: Run the built app
 
-Open `dist/ScrollMouseWin.app`.
+Open:
 
-On first launch, macOS will ask for Accessibility access. If it does not appear automatically, use the menu item `Open Accessibility Settings`.
+```bash
+dist/ScrollMouseWin.app
+```
+
+When the app starts for the first time:
+
+1. Click the menu bar icon.
+2. Choose `Open Accessibility Settings` if macOS does not open it automatically.
+3. In `System Settings > Privacy & Security > Accessibility`, enable `scrollwin-daemon`.
+4. If needed, quit and reopen the app once after granting permission.
+
+## Usage
+
+- Use `Reverse Mouse Scroll` to turn mouse inversion on or off.
+- Use `Launch at Login` to start ScrollWin automatically.
+- Use `Icon Style` to choose the menu bar icon you prefer.
+
+## How It Works
+
+ScrollWin installs a small background daemon at:
+
+```bash
+~/bin/scrollwin-daemon
+```
+
+That daemon listens for mouse wheel scroll events and inverts them before they reach apps. Trackpad-style scrolling is left alone as much as possible.
 
 ## Notes
 
-- The app flips only non-continuous scroll events, which is how standard mouse wheels are usually reported.
 - `Launch at Login` writes a LaunchAgent plist to `~/Library/LaunchAgents/com.codex.scrollmousewin.plist`.
-- If you move the app after enabling autostart, toggle `Launch at Login` off and on again so the saved path is refreshed.
+- Mouse Accessibility permission is granted to `scrollwin-daemon`, not just the app bundle.
+- If you move the app after enabling launch at login, toggle `Launch at Login` off and on again to refresh the saved path.
