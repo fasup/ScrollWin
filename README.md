@@ -32,14 +32,22 @@ swift build
 ./scripts/build-app.sh
 ```
 
-This creates the app at `dist/ScrollMouseWin.app`.
+This creates the app at `dist/ScrollWin.app`.
+
+### Option 2: Build a distributable zip
+
+```bash
+./scripts/package-release.sh
+```
+
+This creates a ready-to-share archive at `release/ScrollWin-macOS.zip`.
 
 ### Option 2: Run the built app
 
 Open:
 
 ```bash
-dist/ScrollMouseWin.app
+dist/ScrollWin.app
 ```
 
 When the app starts for the first time:
@@ -64,6 +72,8 @@ ScrollWin installs a small background daemon at:
 ```
 
 That daemon listens for mouse wheel scroll events and inverts them before they reach apps. Trackpad-style scrolling is left alone as much as possible.
+
+The distributable `.app` bundle already includes the daemon inside it. On first launch, ScrollWin copies that daemon into your user account automatically, so the same app bundle can be moved to another Mac without rebuilding.
 
 ## Notes
 

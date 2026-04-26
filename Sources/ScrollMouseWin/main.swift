@@ -38,16 +38,20 @@ enum StatusIconStyle: String, CaseIterable {
 @MainActor
 final class ScrollInverter {
     static let shared = ScrollInverter()
+    private let fileManager = FileManager.default
 
     // LaunchAgent identity for the daemon (separate from the app's own agent)
     private let daemonLabel   = "com.scrollwin.daemon"
     private var daemonPlistURL: URL {
-        FileManager.default.homeDirectoryForCurrentUser
+        fileManager.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/LaunchAgents/\(daemonLabel).plist")
     }
     private var daemonBinURL: URL {
-        FileManager.default.homeDirectoryForCurrentUser
+        fileManager.homeDirectoryForCurrentUser
             .appendingPathComponent("bin/scrollwin-daemon")
+    }
+    private var bundledDaemonURL: URL? {
+        Bundle.main.resourceURL?.appendingPathComponent("scrollwin-daemon")
     }
 
     private(set) var state: DaemonState = .stopped
@@ -65,10 +69,8 @@ final class ScrollInverter {
 
     private func start() {
         guard !isRunning else { return }
-        guard FileManager.default.fileExists(atPath: daemonBinURL.path) else {
-            state = .failedToStart; return
-        }
         do {
+            try installBundledDaemon()
             try writeDaemonPlist()
             launchctl("load", daemonPlistURL.path)
             state = .running
@@ -85,9 +87,25 @@ final class ScrollInverter {
 
     // MARK: helpers
 
+    private func installBundledDaemon() throws {
+        guard let bundledDaemonURL, fileManager.fileExists(atPath: bundledDaemonURL.path) else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+
+        let installDir = daemonBinURL.deletingLastPathComponent()
+        try fileManager.createDirectory(at: installDir, withIntermediateDirectories: true)
+
+        if fileManager.fileExists(atPath: daemonBinURL.path) {
+            try? fileManager.removeItem(at: daemonBinURL)
+        }
+
+        try fileManager.copyItem(at: bundledDaemonURL, to: daemonBinURL)
+        try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: daemonBinURL.path)
+    }
+
     private func writeDaemonPlist() throws {
         let dir = daemonPlistURL.deletingLastPathComponent()
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
         let payload: [String: Any] = [
             "Label":            daemonLabel,
             "ProgramArguments": [daemonBinURL.path],
@@ -114,7 +132,7 @@ final class ScrollInverter {
     func retryIfNeeded() {
         guard wantsEnabled else { return }
         // If plist is gone (e.g. removed externally) re-install it
-        if !FileManager.default.fileExists(atPath: daemonPlistURL.path) {
+        if !fileManager.fileExists(atPath: daemonPlistURL.path) {
             isRunning ? (state = .stopped) : ()
         }
         if !isRunning { start() }

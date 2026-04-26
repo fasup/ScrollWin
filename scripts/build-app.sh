@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-APP_NAME="ScrollMouseWin"
+APP_NAME="ScrollWin"
 BUILD_DIR="$ROOT_DIR/.build/release"
 APP_DIR="$ROOT_DIR/dist/$APP_NAME.app"
 CONTENTS_DIR="$APP_DIR/Contents"
@@ -18,17 +18,10 @@ swift build -c release --product ScrollMouseWinDaemon
 # ─── Assemble app bundle ───────────────────────────────────────────────────────
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp "$BUILD_DIR/ScrollMouseWin" "$MACOS_DIR/ScrollMouseWin"
-
-# Install the daemon to ~/bin/ — keep its linker-signed ad-hoc signature intact.
-# On Apple Silicon, ALL binaries must have at least an ad-hoc signature or macOS
-# SIGKILL's them. The linker-signed daemon has Identifier=ScrollMouseWinDaemon
-# (no bundle ID) so macOS auto-trusts it for Accessibility without a TCC entry.
-DAEMON_INSTALL_DIR="$HOME/bin"
-mkdir -p "$DAEMON_INSTALL_DIR"
-cp "$BUILD_DIR/ScrollMouseWinDaemon" "$DAEMON_INSTALL_DIR/scrollwin-daemon"
-chmod +x "$DAEMON_INSTALL_DIR/scrollwin-daemon"
-echo "   Daemon installed to: $DAEMON_INSTALL_DIR/scrollwin-daemon"
-echo "   Daemon sig: $(codesign -dv "$DAEMON_INSTALL_DIR/scrollwin-daemon" 2>&1 | grep ^Identifier || true)"
+cp "$BUILD_DIR/ScrollMouseWinDaemon" "$RESOURCES_DIR/scrollwin-daemon"
+chmod +x "$RESOURCES_DIR/scrollwin-daemon"
+echo "   Bundled daemon: $RESOURCES_DIR/scrollwin-daemon"
+echo "   Daemon sig: $(codesign -dv "$RESOURCES_DIR/scrollwin-daemon" 2>&1 | grep ^Identifier || true)"
 
 cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -36,7 +29,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
 <plist version="1.0">
 <dict>
     <key>CFBundleDisplayName</key>
-    <string>ScrollMouseWin</string>
+    <string>ScrollWin</string>
     <key>CFBundleExecutable</key>
     <string>ScrollMouseWin</string>
     <key>CFBundleIdentifier</key>
@@ -44,7 +37,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>ScrollMouseWin</string>
+    <string>ScrollWin</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -56,7 +49,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
     <key>LSUIElement</key>
     <true/>
     <key>NSAccessibilityUsageDescription</key>
-    <string>ScrollMouseWin needs Accessibility access to reverse the mouse scroll wheel direction.</string>
+    <string>ScrollWin needs Accessibility access to reverse the mouse scroll wheel direction.</string>
     <key>NSAppleEventsUsageDescription</key>
     <string>Used to open Accessibility settings.</string>
 </dict>
