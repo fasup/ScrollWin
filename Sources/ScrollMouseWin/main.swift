@@ -96,11 +96,22 @@ final class ScrollInverter {
         try fileManager.createDirectory(at: installDir, withIntermediateDirectories: true)
 
         if fileManager.fileExists(atPath: daemonBinURL.path) {
+            if try daemonMatchesInstalledVersion(installedURL: daemonBinURL, bundledURL: bundledDaemonURL) {
+                try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: daemonBinURL.path)
+                return
+            }
+
             try? fileManager.removeItem(at: daemonBinURL)
         }
 
         try fileManager.copyItem(at: bundledDaemonURL, to: daemonBinURL)
         try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: daemonBinURL.path)
+    }
+
+    private func daemonMatchesInstalledVersion(installedURL: URL, bundledURL: URL) throws -> Bool {
+        let installedData = try Data(contentsOf: installedURL, options: .mappedIfSafe)
+        let bundledData = try Data(contentsOf: bundledURL, options: .mappedIfSafe)
+        return installedData == bundledData
     }
 
     private func writeDaemonPlist() throws {
