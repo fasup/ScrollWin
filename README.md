@@ -42,7 +42,43 @@ This creates the app at `dist/ScrollWin.app`.
 
 This creates a ready-to-share archive at `release/ScrollWin-macOS.zip`.
 
-### Option 2: Run the built app
+### Option 3: Build, sign, notarize, and staple for release
+
+1. Create a `Developer ID Application` certificate in your Apple Developer account and install it in Keychain Access.
+2. Store notarization credentials in the keychain with Apple's `notarytool`.
+
+Example:
+
+```bash
+xcrun notarytool store-credentials "ScrollWinNotary" \
+  --apple-id "YOUR_APPLE_ID" \
+  --team-id "YOUR_TEAM_ID" \
+  --password "YOUR_APP_SPECIFIC_PASSWORD"
+```
+
+Then run:
+
+```bash
+SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+NOTARY_PROFILE="ScrollWinNotary" \
+./scripts/notarize-release.sh
+```
+
+This will:
+
+- build the app
+- sign the app with hardened runtime and timestamping
+- package `release/ScrollWin-macOS.zip`
+- submit it with `notarytool`
+- staple the notarization ticket back onto `dist/ScrollWin.app`
+
+To verify the final app:
+
+```bash
+./scripts/verify-release.sh
+```
+
+### Option 4: Run the built app
 
 Open:
 
@@ -80,3 +116,4 @@ The distributable `.app` bundle already includes the daemon inside it. On first 
 - `Launch at Login` writes a LaunchAgent plist to `~/Library/LaunchAgents/com.codex.scrollmousewin.plist`.
 - Mouse Accessibility permission is granted to `scrollwin-daemon`, not just the app bundle.
 - If you move the app after enabling launch at login, toggle `Launch at Login` off and on again to refresh the saved path.
+- Apple notarization currently uses `xcrun notarytool`; older `altool` uploads are no longer accepted by Apple.
